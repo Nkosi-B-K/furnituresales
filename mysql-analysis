@@ -1,0 +1,324 @@
+# THE FURNTIURE DATABASE WILL BE CREATED AND DATA IMPORTED FROM MY EXCEL FILE
+# CONTAINING THE DATA FOR THIS ANALYSIS.
+# THE DATA CONTAINS 2500 ROWS AND 15 COLUMNS AND THIS WILL BE VERIFIED WITH A SELECT QUERY
+# ONCE THE DATA HAS BEEN IMPORTED
+
+USE furniture;
+
+SELECT *
+FROM furniture;
+
+# AT THIS POINT I WILL PROCEED TO COMPLETE A DATA CLEANING PROCESS BEFORE I CONTINUE WITH MY ANALYSIS
+
+# I HAVE NOTICED A COLUMN NAME WAS IMPORTED SUCCESSFULY BUT TRANSLATED INTO AN UNCLEAR COLUMN NAME WHICH i WILL RENAME TO PRICE
+
+ALTER TABLE furniture
+RENAME COLUMN ï»¿price TO price;
+
+# I WILL NOT LOOK FOR MISSING DATA WITHIN THE DATASET
+
+SELECT *
+FROM furniture
+WHERE COALESCE(price, cost, sales, profit_margin, inventory, discount_percentage, delivery_days, 
+               category, material, color, location, season, store_type, brand, revenue) IS NULL;
+               
+# THERE ARE NO MISSING VALUES OR DATA IN THIS DATASET
+# I WANT TO IDENTIFY IDENTICAL VALUES IF THERE ARE ANY THAT EXIST
+
+SELECT price, cost, sales, profit_margin, inventory, discount_percentage, delivery_days, 
+               category, material, color, location, season, store_type, brand, revenue,
+               COUNT(*) OVER (PARTITION BY price, cost, sales, profit_margin, inventory, discount_percentage, delivery_days, 
+               category, material, color, location, season, store_type, brand, revenue) AS duplicate_count
+FROM furniture;
+
+# THERE ARE NO DUPLICATE VALUES TO BE FOUND IN THE DATASET
+
+# I CAN NOW CONTINUE WITH EXPLORATORY DATA ANALYSIS BEFORE ANSWERING SOME KEY QUESTIONS
+
+# I WOULD LIKE TO SEE THE PRICE RANGE
+
+SELECT ROUND(MAX(price), 2) AS max_price
+FROM furniture;
+
+SELECT ROUND(MIN(price), 2) AS min_price
+FROM furniture;
+
+SELECT ROUND(price, 2),
+CASE WHEN price BETWEEN 50.7 AND 249.93 THEN 'Low'
+     WHEN price BETWEEN 249.94 AND 499.88 THEN 'High'
+END AS price_range
+FROM furniture
+GROUP BY price
+ORDER BY price DESC, price_range DESC;
+
+# I WOULD LIKE ALSO TO SEE THE COST RANGE TO SEE THE PRICE RANGE
+
+SELECT ROUND(MAX(cost), 2) AS max_cost
+FROM furniture;
+
+SELECT ROUND(MIN(cost), 2) AS min_cost
+FROM furniture;
+
+SELECT ROUND(cost, 2),
+CASE WHEN cost BETWEEN 26.50 AND 223.50 THEN 'Low'
+     WHEN cost BETWEEN 223.51 AND 447.51 THEN 'High'
+END AS cost_range
+FROM furniture
+ORDER BY cost;
+
+
+SELECT COUNT(DISTINCT cost) AS unique_cost_values
+FROM furniture;
+
+SELECT 
+    ROUND(cost, 2) AS cost, 
+    ROUND(price, 2) AS price,
+    CASE 
+        WHEN cost BETWEEN 26.50 AND 223.50 THEN 'Low'
+        WHEN cost BETWEEN 223.51 AND 447.51 THEN 'High'
+    END AS cost_range,
+    CASE 
+        WHEN price BETWEEN 50.7 AND 249.93 THEN 'Low'
+        WHEN price BETWEEN 249.94 AND 499.87 THEN 'High'
+    END AS price_range
+FROM furniture
+GROUP BY cost, price, cost_range, price_range
+ORDER BY cost, price;
+
+SELECT ROUND(MAX(profit_margin), 2) AS max_pm
+FROM furniture;
+
+SELECT ROUND(MIN(profit_margin), 2) AS min_pm
+FROM furniture;
+
+SELECT ROUND(AVG(profit_margin), 2) AS max_pm
+FROM furniture;
+
+
+SELECT ROUND(profit_margin, 2),
+CASE WHEN profit_margin BETWEEN 10 AND 30.20 THEN 'Low'
+     WHEN profit_margin BETWEEN 30.21 AND 51 THEN 'High'
+END AS prof_marg_range
+FROM furniture
+GROUP BY profit_margin
+ORDER BY profit_margin DESC;
+
+# I WANT TO BE ABLE TO COMPARE THE PRICE, COST AND PROFIT MARGIN IN ONE GRAPH SO 
+# I WILL CREATE AND RUN A QUERY THAT PUTS ALL THIS DATA TOGETHER FOR ME
+SELECT 
+    ROUND(cost, 2) AS cost, 
+    ROUND(price, 2) AS price,
+    ROUND(profit_margin, 2) AS profit_margin,
+    CASE 
+        WHEN cost BETWEEN 26.50 AND 223.50 THEN 'Low'
+        WHEN cost BETWEEN 223.51 AND 447.51 THEN 'High'
+    END AS cost_range,
+    CASE 
+        WHEN price BETWEEN 50.7 AND 249.93 THEN 'Low'
+		WHEN price BETWEEN 249.94 AND 499.88 THEN 'High'
+    END AS price_range,
+    CASE 
+        WHEN profit_margin BETWEEN 10 AND 30.20 THEN 'Low'
+        WHEN profit_margin BETWEEN 30.21 AND 51 THEN 'High'
+    END AS prof_marg_range
+FROM furniture
+GROUP BY cost, price, profit_margin, cost_range, price_range, prof_marg_range
+ORDER BY cost, price, profit_margin;
+
+# I AM CURIOUS TO SEE THE HIGHEST DISOUNT LEVEL AND THE LOWEST DISCOUNT LEVEL.
+# I AM EXPECTING TO SEE A RELATIONSHIP BETWEEN LARGER FURNITURE AND SOMEWHAT LOWER DISCOUNTS
+# AND VICE VERSA
+
+SELECT *
+FROM furniture;
+
+# I AM INTERESTED TO SEE IF THERE IS ANY SIGNIFICANT INSIGHT TO BE DRAWN FROM THE DISCOUNT PERCENTAGE AND COST SHOWN IN 
+# THE FURNITURE TABLE
+
+SELECT 
+	ROUND(discount_percentage, 2) as discount_percentage,
+    category, 
+    ROUND(cost, 2),
+    material
+FROM furniture
+GROUP BY discount_percentage, category, cost, material
+ORDER BY discount_percentage DESC;
+
+
+SELECT DISTINCT
+	ROUND(discount_percentage, 2)
+FROM furniture;
+
+SELECT DISTINCT category, material
+FROM FURNITURE
+ORDER BY category;
+
+SELECT * FROM furniture;
+
+# HERE I WOULD LIKE TO SEE REVENUE AGAINST SALES ACCORDING TO THE CATEGORY OF THE FURNITURE TO SEE
+# WHICH FURNITURE ITEMS WERE PRODUCING THE HIGHEST REVENUE AND HOW MANY SALES ARE ATTACHED TO THE ITEM
+
+SELECT
+	ROUND(revenue, 2) AS revenue,
+    sales,
+    category
+FROM furniture
+GROUP BY revenue, sales, category
+ORDER BY revenue DESC;
+
+SELECT distinct
+	category, ROUND(revenue, 2) AS revenue
+FROM
+	furniture
+GROUP BY category, revenue
+ORDER BY revenue DESC;
+
+
+SELECT 
+ROUND(MAX(revenue), 2),
+ROUND(MIN(revenue), 2)
+FROM furniture
+WHERE category = 'table';
+
+SELECT ROUND(sum(revenue), 2)
+from furniture
+where category = 'table';
+
+# I AM INTERESTED TO SEE THE RELATIONSHIP BETWEEN REVENUE AND THE KIND OF MATERIAL CHOSEN BY CUSTOMERS
+# I WANT TO UNDERSTAND WHAT MATERIAL IS BRING IN THE HIGHEST REVENUE
+
+SELECT distinct
+	material, ROUND(revenue, 2) AS revenue
+FROM
+	furniture
+GROUP BY material, revenue
+ORDER BY revenue DESC;
+
+SELECT * 
+FROM furniture;
+
+# I WOULD LIKE TO UNDERSTAND WHICH LOCATIONS BETWEEN RURAL, SUB URBAN AND URBAN ARE THE LARGEST CONTRIBUTORS
+# TO THE REVENUE GENERATED IN THIS DATA SET
+
+SELECT distinct
+	location, ROUND(revenue, 2) AS revenue
+FROM
+	furniture
+GROUP BY location, revenue
+ORDER BY revenue DESC;
+
+# I WOULD LIKE TO SEE IF THERE IS EVIDENCE OF ONE OF THE FOUR BRANDS BEING A HIGHER CONTRIBUTOR
+# TO THE REVENUE GENERATED
+
+SELECT brand
+FROM furniture;
+
+SELECT
+    brand,
+    ROUND(SUM(revenue), 2) AS total_revenue
+FROM furniture
+GROUP BY brand
+ORDER BY total_revenue DESC;
+
+# I WOULD LIKE TO FURTHER INCLUDE LOCATION TO SEE WHICH LOCATION WAS BRINGING IN
+#THE HIGHEST REVENUE IN ADDITION TO BRAND
+
+SELECT DISTINCT
+	location, brand, ROUND(sum(revenue), 2) as revenue
+FROM
+	furniture
+WHERE brand = 'branda' AND location = 'suburban'
+GROUP BY location, brand;
+
+# I WOULD LIKE TO SEE WHICH SEASON IF ANY IS THE HIGHEST FOR REVENUE GENERATION
+#THIS MIGHT GIVE INSIGHT INTO A BUSIER PURCHASE SEASON IF ONE DOES EXIST
+
+SELECT DISTINCT
+	season,
+    ROUND(SUM(revenue), 2) AS Total_revenue
+FROM furniture
+GROUP BY season;
+
+# I WOULD LIKE TO SEE WHAT THE PROFIT MARGIN IS AGAINST CATEGORIES AND MAYBE MATERIALS AS WELL
+SELECT profit_margin
+FROM furniture
+ORDER BY profit_margin ASC;
+
+SELECT DISTINCT
+    category,
+    material,
+	ROUND(SUM(profit_margin), 2) as profit_margin
+FROM furniture
+GROUP BY category, material, profit_margin
+ORDER BY profit_margin DESC;
+
+SELECT * 
+From furniture;
+
+# IN LINE WITH REVENUE I WOULD LIKE TO SEE WHERE THE MOST PROFITS WERE GENERATED AND WHERE THE MOST LOSSES WERE SIFFERED
+# I WILL BASE THIS ON THE CATEGORY COLUMN
+
+SELECT 
+category,
+ROUND(revenue, 2) AS Revenue,
+CASE WHEN revenue <= 0 THEN 'loss'
+ELSE 'profit'
+END AS Loss_and_Profit
+FROM furniture
+GROUP BY category, revenue
+ORDER BY revenue;
+
+# THERE MAY BE A CONNECTION BETWEEN REVENUE AND PROFITBAILITY AND REVENUE
+# I WOULD LIKE TO INVESTIGATE THIS BASED ON THE STORE TYPE AND LOCATION
+
+SELECT DISTINCT
+	location,
+    store_type,
+    ROUND(AVG(delivery_days), 1) AS AVG_delivery_days
+FROM furniture
+GROUP BY store_type, location
+ORDER BY location;
+
+# HERE I WOULD LIKE TO SEE THE TOTAL REVENUE BY LOCATION EXCLUSIVELY
+
+SELECT DISTINCT
+	location,
+    ROUND(SUM(revenue), 2) AS total_rev
+FROM furniture
+GROUP BY location
+ORDER BY location;
+
+SELECT *
+FROM furniture;
+
+# THERE ARE FOUR BRANDS IN THE DATE AND I AM CURIOUS TO SEE WHICH BRAND OR BRANDS ARE THE HIGHEST CONTRIBUTORS TO REVENUE
+
+SELECT DISTINCT
+	brand,
+    ROUND(SUM(revenue), 2) AS rev_by_brand
+FROM furniture
+GROUP BY brand
+ORDER BY brand;
+
+SELECT *
+FROM furniture;
+
+# I WOULD LIKE TO SEE REVENUE AND SALES BUT WITH A FOCUS ON THE HIGHER END SALE NUMBERS
+# ALTHOUGH THERE MAY BE MULTIPLE ITEMS WITH A SALE NUMBER OF 49 THERE ARE DIFFERENCES AND I WOULD
+# LIKE TO EXPLORE THESE
+
+SELECT DISTINCT
+	inventory, 
+    sales,
+    ROUND(revenue, 2) as revenue,
+    category, 
+    material
+FROM furniture
+WHERE sales = '49'
+GROUP BY inventory, sales, revenue, category, material
+ORDER BY revenue DESC;
+
+SELECT *
+FROM furniture;
+
+##ENDS
